@@ -1,10 +1,186 @@
-/* simple styles */
-body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:#f7fafc; color:#111827; }
-.container{ max-width:1100px; margin:24px auto; padding:0 16px; }
-.header{ display:flex; justify-content:space-between; align-items:center; padding:14px 0; }
-.nav-links a{ margin-left:12px; text-decoration:none; color:#1f2937; }
-.card{ background:white; border-radius:8px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
-.button{ background:#059669; color:white; padding:8px 12px; border-radius:6px; border:none; cursor:pointer; }
-.input{ padding:8px; width:100%; box-sizing:border-box; border:1px solid #e5e7eb; border-radius:6px; }
-.grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
-.small{ font-size:0.9rem; color:#6b7280; }
+/* --- Base Styling (from your original index.css) --- */
+body { 
+    font-family: Inter, system-ui, apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
+    margin: 0; 
+    padding: 0;
+    background-color: #f4f4f4; /* Light gray background for the app */
+}
+
+/* --- 1. Header Styling --- */
+.app-header {
+    background-color: #fff;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.logo {
+    font-size: 20px;
+    font-weight: bold;
+    color: #4CAF50; /* Green color for the brand */
+}
+
+.location {
+    font-size: 12px;
+    color: #777;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* --- 2. Category Styling --- */
+.category-section {
+    padding: 15px 0 0 15px;
+}
+
+.category-list-container {
+    display: flex;
+    overflow-x: scroll; /* Allows horizontal scrolling */
+    padding: 10px 0;
+    -webkit-overflow-scrolling: touch; /* Improved scrolling on iOS */
+    gap: 10px; /* Space between items */
+    margin-right: 15px; /* Adjust for scrollbar space */
+}
+
+/* Hide scrollbar for a cleaner look */
+.category-list-container::-webkit-scrollbar {
+    display: none;
+}
+.category-list-container {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+.category-item {
+    display: block;
+    min-width: 80px; /* Fixed width for category links */
+    text-align: center;
+    padding: 10px 5px;
+    background-color: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.category-item.active {
+    border: 2px solid #4CAF50;
+    font-weight: bold;
+}
+
+.view-all-button {
+    flex-shrink: 0; /* Prevents button from shrinking */
+    background: none;
+    border: none;
+    color: #4CAF50;
+    font-weight: bold;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+/* --- 3. Product Grid Styling --- */
+.product-listing-section {
+    padding: 0 15px;
+}
+
+.product-grid {
+    display: grid;
+    /* Responsive grid: Min width of 150px per card, fills available space */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    padding-top: 10px;
+}
+
+/* Individual Card Styling (Copied from previous response) */
+.product-card {
+    width: 100%; /* Take up full grid cell width */
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08); 
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-image-container {
+    width: 100%;
+    height: 100px;
+    overflow: hidden;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.product-rating {
+    display: inline-block;
+    background-color: #e9f5e9;
+    color: #4CAF50;
+    font-size: 12px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.product-price {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.current-price {
+    font-weight: bold;
+    color: #2c2c2c;
+    margin-right: 8px;
+}
+
+.old-price {
+    color: #999;
+    text-decoration: line-through;
+    font-size: 12px;
+}
+
+.add-to-cart-button {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    text-align: center;
+    padding: 0;
+}
