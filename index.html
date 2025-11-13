@@ -1,12 +1,78 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lucky Marketplace</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Marketplace Demo</title>
+    <link rel="stylesheet" href="style.css"> 
+    </head>
+<body>
+
+    <header class="app-header">
+        <div class="header-top">
+            <span class="logo">6amMart</span>
+            <span class="location">98A eighth avenue, New York, US</span>
+        </div>
+        <div class="search-bar-container">
+            <input type="search" placeholder="Search item or store here..." class="search-input">
+        </div>
+    </header>
+
+    <section class="category-section">
+        <h3>Categories</h3>
+        <div class="category-list-container">
+            <a href="#" class="category-item active">All</a>
+            <a href="#" class="category-item">Fish & Meat</a>
+            <a href="#" class="category-item">Breakfast</a>
+            <a href="#" class="category-item">Fruits</a>
+            <a href="#" class="category-item">Vegetables</a>
+            <a href="#" class="category-item">Pet Food</a>
+            <a href="#" class="category-item">Dairy</a>
+            <button class="view-all-button">View All</button>
+        </div>
+    </section>
+
+    <section class="product-listing-section">
+        <h3>Popular Items Nearby</h3>
+        <div class="product-grid">
+            <div class="product-card">
+                <div class="product-image-container">
+                    <img src="https://via.placeholder.com/150/FFC300/000000?text=Mango" alt="Mango" class="product-image">
+                </div>
+                <div class="product-details">
+                    <div class="product-rating">
+                        <span class="star-icon">★</span> 
+                        <span class="rating-value">4.9</span>
+                    </div>
+                    <div class="product-name">Mango</div>
+                    <div class="product-price">
+                        <span class="current-price">$7.56</span>
+                        <span class="old-price">$9.99</span>
+                    </div>
+                </div>
+                <button class="add-to-cart-button">+</button>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-container">
+                    <img src="https://via.placeholder.com/150/B5B5B5/000000?text=Mayo" alt="Mayonnaise" class="product-image">
+                </div>
+                <div class="product-details">
+                    <div class="product-rating">
+                        <span class="star-icon">★</span> 
+                        <span class="rating-value">4.0</span>
+                    </div>
+                    <div class="product-name">Mayonnaise</div>
+                    <div class="product-price">
+                        <span class="current-price">$5.99</span>
+                        <span class="old-price">$7.00</span>
+                    </div>
+                </div>
+                <button class="add-to-cart-button">+</button>
+            </div>
+
+            </div>
+    </section>
+
+</body>
 </html>
