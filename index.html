@@ -65,16 +65,6 @@
         <p class="ml-4 text-green-700 font-semibold">Loading...</p>
     </div>
 
-    <!-- Global Header (Visible across most screens) -->
-    <header id="main-header" class="app-header bg-white p-4 hidden">
-        <div class="flex justify-between items-center mb-2">
-            <span class="text-xl font-bold text-green-600">6amMart</span>
-            <span id="header-location" class="text-xs text-gray-500">Loading Location...</span>
-        </div>
-        <input type="search" id="search-input" placeholder="Search item or store here..." 
-               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-sm">
-    </header>
-
     <!-- Global Message/Modal Box -->
     <div id="message-box" class="fixed top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
         Item added to cart!
@@ -194,7 +184,8 @@
             </div>
             
             <button onclick="handleCheckout()" id="checkout-button" class="w-full bg-green-600 text-white p-3 rounded-xl font-semibold mt-6 disabled:bg-green-300">Proceed to Checkout</button>
-            
+            <button onclick="clearCart()" id="clear-cart-button" class="w-full bg-red-100 text-red-600 p-3 rounded-xl font-semibold mt-3 disabled:opacity-50 hover:bg-red-200 transition">Clear Cart</button>
+
             <!-- Checkout Modal -->
             <div id="checkout-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center hidden">
                 <div class="bg-white p-6 rounded-xl shadow-2xl w-11/12 max-w-sm">
@@ -264,7 +255,15 @@
         
         // --- Global Variables (Provided by Canvas Environment) ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        let firebaseConfig = null;
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+            }
+        } catch (e) {
+            console.error("Error parsing __firebase_config:", e);
+        }
+        
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
         // --- App State ---
@@ -274,9 +273,21 @@
         window.userId = null;
         window.cart = []; // Local mirror of cart state
         window.orders = []; // Local mirror of orders state
+        window.isFirebaseReady = false; // Flag to track successful initialization
 
         const DELIVERY_FEE = 5.00;
-        const API_BASE_URL = 'https://lucky-backend-xh9.onrender.com'; // **UPDATE THIS LINE IF NEEDED**
+        const API_BASE_URL = 'https://lucky-backend-xh9.onrender.com'; 
+
+        // Mock Product Data
+        const MOCK_PRODUCTS = [
+            { id: 'p1', name: 'Premium Burger Combo', price: 12.50, category: 'fastfood', imageUrl: 'https://placehold.co/150x150/10B981/ffffff?text=Burger' },
+            { id: 'p2', name: 'Fresh Salad Bowl', price: 8.75, category: 'healthy', imageUrl: 'https://placehold.co/150x150/059669/ffffff?text=Salad' },
+            { id: 'p3', name: 'Iced Coffee', price: 4.00, category: 'drinks', imageUrl: 'https://placehold.co/150x150/F59E0B/ffffff?text=Coffee' },
+            { id: 'p4', name: 'Chocolate Sundae', price: 6.25, category: 'desserts', imageUrl: 'https://placehold.co/150x150/DC2626/ffffff?text=Sundae' },
+            { id: 'p5', name: 'Spicy Tacos (3 Pcs)', price: 9.50, category: 'fastfood', imageUrl: 'https://placehold.co/150x150/84CC16/ffffff?text=Tacos' },
+            { id: 'p6', name: 'Lemonade', price: 3.50, category: 'drinks', imageUrl: 'https://placehold.co/150x150/3B82F6/ffffff?text=Lemonade' },
+        ];
+
 
         // --- Utility Functions ---
 
@@ -293,13 +304,62 @@
             }, 3000);
         }
 
+        // --- Routing and Navigation ---
+
+        const views = ['auth-view', 'home-view', 'food-view', 'cart-view', 'account-view'];
+
+        window.navigateTo = function(targetViewId) {
+            views.forEach(viewId => {
+                const view = document.getElementById(viewId);
+                if (view) {
+                    if (viewId === targetViewId) {
+                        view.classList.remove('hidden');
+                    } else {
+                        view.classList.add('hidden');
+                    }
+                }
+            });
+            // Update footer active state
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.classList.remove('text-green-600');
+                button.classList.add('text-gray-400');
+                if (button.dataset.view === targetViewId) {
+                    button.classList.remove('text-gray-400');
+                    button.classList.add('text-green-600');
+                }
+            });
+            
+            // Special handlers for view changes
+            if (targetViewId === 'food-view') {
+                fetchProducts();
+            }
+            // Ensure footer is shown only after successful auth
+            const mainFooter = document.getElementById('main-footer');
+            if (window.userId) {
+                 mainFooter.classList.remove('hidden');
+            } else {
+                 mainFooter.classList.add('hidden');
+            }
+        }
+        
+        // Add navigation listeners for the footer
+        document.querySelectorAll('.nav-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                navigateTo(button.dataset.view);
+            });
+        });
+
+
         // --- Firestore References ---
 
         function getCartRef() {
+            // Private data storage path: /artifacts/{appId}/users/{userId}/cart/current
             return doc(window.db, "artifacts", appId, "users", window.userId, "cart", "current");
         }
         
         function getOrdersCollectionRef() {
+            // Private data collection path: /artifacts/{appId}/users/{userId}/orders
             return collection(window.db, "artifacts", appId, "users", window.userId, "orders");
         }
 
@@ -307,52 +367,53 @@
 
         async function initAuth() {
             if (!firebaseConfig) {
-                console.error("Firebase configuration not found.");
+                console.error("Firebase configuration not available. Cannot initialize Firebase.");
+                showMessage("App Error: Firebase configuration missing.");
+                hideLoading();
                 return;
             }
 
-            window.app = initializeApp(firebaseConfig);
-            window.db = getFirestore(window.app);
-            window.auth = getAuth(window.app);
-
-            // Listen for auth state changes
-            onAuthStateChanged(window.auth, (user) => {
-                if (user) {
-                    window.userId = user.uid;
-                    document.getElementById('account-user-id').textContent = user.uid.substring(0, 12) + '...';
-                    navigateTo('home-view');
-                    document.getElementById('main-header').classList.remove('hidden');
-                    document.getElementById('main-footer').classList.remove('hidden');
-                    initFirestoreListeners();
-                } else {
-                    window.userId = null;
-                    navigateTo('auth-view');
-                    document.getElementById('main-header').classList.add('hidden');
-                    document.getElementById('main-footer').classList.add('hidden');
-                }
-                hideLoading();
-            });
-
-            // Initial sign-in attempt
-            showLoading();
             try {
+                window.app = initializeApp(firebaseConfig);
+                window.db = getFirestore(window.app);
+                window.auth = getAuth(window.app);
+                
+                // IMPORTANT: Set flag ONLY after successful initialization
+                window.isFirebaseReady = true; 
+
+                // Listen for auth state changes
+                onAuthStateChanged(window.auth, (user) => {
+                    if (user) {
+                        window.userId = user.uid;
+                        document.getElementById('account-user-id').textContent = user.uid.substring(0, 12) + '...';
+                        navigateTo('home-view');
+                        initFirestoreListeners();
+                    } else {
+                        window.userId = null;
+                        navigateTo('auth-view');
+                    }
+                    hideLoading();
+                });
+
+                // Initial sign-in attempt
+                showLoading();
                 if (initialAuthToken) {
                     await signInWithCustomToken(window.auth, initialAuthToken);
                 } else {
+                    // Sign in anonymously if no custom token is provided
                     await signInAnonymously(window.auth);
                 }
             } catch (error) {
-                console.error("Initial sign-in failed:", error);
-                // Fallback to anonymous sign-in if custom token fails
-                try {
-                    await signInAnonymously(window.auth);
-                } catch (e) {
-                    console.error("Anonymous sign-in failed:", e);
-                }
+                console.error("Firebase initialization or initial sign-in failed:", error);
+                showMessage(`Initialization Error: ${error.message}`);
+                hideLoading();
             }
         }
         
         window.handleLogin = async function() {
+            if (!window.isFirebaseReady || !window.auth) {
+                return showMessage("System not ready. Please wait or refresh.");
+            }
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             if (!email || !password) return showMessage("Please enter email and password.");
@@ -367,6 +428,9 @@
         }
 
         window.handleSignup = async function() {
+            if (!window.isFirebaseReady || !window.auth) {
+                return showMessage("System not ready. Please wait or refresh.");
+            }
             const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
             if (!email || !password || password.length < 6) return showMessage("Password must be 6 characters.");
@@ -381,6 +445,7 @@
         }
 
         window.handleLogout = async function() {
+            if (!window.isFirebaseReady || !window.auth) return;
             showLoading();
             try {
                 await signOut(window.auth);
@@ -411,7 +476,9 @@
             // 1. Cart Listener
             onSnapshot(getCartRef(), (docSnapshot) => {
                 if (docSnapshot.exists()) {
-                    window.cart = docSnapshot.data().items || [];
+                    // Safety check for array type (though Firebase usually handles this)
+                    const data = docSnapshot.data();
+                    window.cart = Array.isArray(data.items) ? data.items : []; 
                 } else {
                     window.cart = [];
                 }
@@ -431,7 +498,12 @@
         async function updateCartInFirestore(newCart) {
             if (!window.userId || !window.db) return showMessage("Authentication required.");
             try {
-                await setDoc(getCartRef(), { items: newCart, userId: window.userId, updatedAt: serverTimestamp() }, { merge: true });
+                // Use setDoc for the single document where cart data resides
+                await setDoc(getCartRef(), { 
+                    items: newCart, 
+                    userId: window.userId, 
+                    updatedAt: serverTimestamp() 
+                }, { merge: true });
             } catch (error) {
                 console.error("Failed to update cart:", error);
                 showMessage("Error updating cart.");
@@ -439,6 +511,8 @@
         }
 
         window.addToCart = function(product) {
+            if (!window.isFirebaseReady || !window.userId) return showMessage("Please log in to add items.");
+            
             const existingItem = window.cart.find(item => item.id === product.id);
             let newCart;
             
@@ -455,6 +529,8 @@
         }
 
         window.updateCartItemQuantity = function(productId, delta) {
+            if (!window.isFirebaseReady || !window.userId) return;
+            
             let newCart = window.cart.map(item => {
                 if (item.id === productId) {
                     const newQuantity = item.quantity + delta;
@@ -467,6 +543,15 @@
             updateCartInFirestore(newCart);
         }
 
+        window.clearCart = function() {
+            if (!window.isFirebaseReady || !window.userId) return showMessage("Please log in first.");
+            if (window.cart.length === 0) return showMessage("Cart is already empty.");
+            
+            // Clear the cart by setting the items array to empty
+            updateCartInFirestore([]);
+            showMessage("Cart cleared successfully!");
+        }
+
         // --- UI Rendering ---
 
         function updateCartUI() {
@@ -475,19 +560,25 @@
             const subtotalElement = document.getElementById('cart-subtotal');
             const totalElement = document.getElementById('cart-total');
             const checkoutButton = document.getElementById('checkout-button');
+            const clearCartButton = document.getElementById('clear-cart-button');
+
+            const cartTotalQuantity = window.cart.reduce((sum, item) => sum + item.quantity, 0);
 
             if (window.cart.length === 0) {
                 cartItemsContainer.innerHTML = '<p class="text-center text-gray-500 py-10">Your cart is empty.</p>';
                 cartCountElement.classList.add('hidden');
                 checkoutButton.disabled = true;
+                clearCartButton.disabled = true;
                 subtotalElement.textContent = '$0.00';
-                totalElement.textContent = '$0.00';
+                totalElement.textContent = `$${DELIVERY_FEE.toFixed(2)}`;
+                document.getElementById('modal-total').textContent = `$${DELIVERY_FEE.toFixed(2)}`;
                 return;
             }
 
             checkoutButton.disabled = false;
+            clearCartButton.disabled = false;
             cartCountElement.classList.remove('hidden');
-            cartCountElement.textContent = window.cart.reduce((sum, item) => sum + item.quantity, 0);
+            cartCountElement.textContent = cartTotalQuantity;
 
             let subtotal = 0;
             let cartHTML = '';
@@ -500,7 +591,7 @@
                     <div class="flex items-center bg-white p-3 rounded-xl shadow-sm">
                         <img src="${item.imageUrl}" alt="${item.name}" class="w-12 h-12 object-cover rounded-md mr-4">
                         <div class="flex-grow">
-                            <p class="font-semibold text-sm">${item.name}</p>
+                            <p class="font-semibold text-sm truncate">${item.name}</p>
                             <p class="text-green-600 font-bold text-sm">$${item.price.toFixed(2)}</p>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -528,20 +619,26 @@
             }
             
             let ordersHTML = '';
-            window.orders.sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime()); // Sort by newest first
+            // Sort in memory by createdAt descending
+            window.orders.sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt.toDate()).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt.toDate()).getTime() : 0;
+                return dateB - dateA;
+            });
             
             window.orders.forEach(order => {
                 const date = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleDateString() : 'N/A';
                 const total = order.total.toFixed(2);
+                const statusColor = order.status === 'Pending' ? 'yellow' : 'green';
 
                 ordersHTML += `
-                    <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 ${order.status === 'Pending' ? 'border-yellow-500' : 'border-green-500'}">
+                    <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-${statusColor}-500">
                         <div class="flex justify-between items-center mb-2">
                             <span class="font-semibold text-sm">Order ID: ${order.id.substring(0, 8)}</span>
                             <span class="text-xs text-gray-500">${date}</span>
                         </div>
                         <p class="font-bold text-xl text-green-600 mb-2">$${total}</p>
-                        <p class="text-sm">Status: <span class="font-bold text-${order.status === 'Pending' ? 'yellow' : 'green'}-500">${order.status}</span></p>
+                        <p class="text-sm">Status: <span class="font-bold text-${statusColor}-500">${order.status}</span></p>
                         <details class="mt-2">
                             <summary class="text-sm font-medium text-gray-500 cursor-pointer">Details (${order.items.length} items)</summary>
                             <ul class="mt-2 text-xs space-y-1">
@@ -567,7 +664,7 @@
         }
 
         window.placeOrder = async function() {
-            if (!window.userId || window.cart.length === 0) return;
+            if (!window.userId || window.cart.length === 0 || !window.isFirebaseReady) return showMessage("Authentication or cart error.");
             hideCheckoutModal();
             showLoading();
 
@@ -586,17 +683,19 @@
             };
 
             try {
-                // 1. Add order to Firestore
-                await setDoc(doc(getOrdersCollectionRef()), orderData);
+                // 1. Add order to Firestore (Auto-generate ID)
+                // Using doc(collectionRef) generates a new ID automatically
+                const newOrderRef = doc(getOrdersCollectionRef());
+                await setDoc(newOrderRef, orderData);
 
                 // 2. Clear the cart
-                await setDoc(getCartRef(), { items: [], userId: window.userId, updatedAt: serverTimestamp() });
+                await updateCartInFirestore([]);
                 
                 showMessage(`Order Placed! Total: $${total.toFixed(2)}`);
                 navigateTo('account-view');
             } catch (error) {
                 console.error("Failed to place order:", error);
-                showMessage("Order placement failed.");
+                showMessage(`Order placement failed: ${error.message}`);
             }
             hideLoading();
         }
@@ -606,132 +705,72 @@
         
         async function fetchProducts(category = 'all', query = '') {
             const productGrid = document.getElementById('product-grid');
-            productGrid.innerHTML = '<p class="text-center text-gray-500 py-10">Loading products...</p>';
-
-            // Use the actual backend API URL, but fallback to mock data on error
-            let url = `${API_BASE_URL}/api/products`;
-            if (query) {
-                url = `${API_BASE_URL}/api/products/search?query=${query}`;
-            } else if (category && category !== 'all') {
-                url = `${API_BASE_URL}/api/products?category=${category}`;
-            }
-
-            try {
-                const response = await fetch(url);
-                const products = await response.json();
-                renderProducts(products);
-            } catch (error) {
-                console.warn("Could not fetch products from backend. Using mock data.", error);
-                // Fallback Mock Data
-                const mockProducts = [
-                    { id: 'p1', name: 'Fresh Salad Bowl', category: 'fastfood', price: 9.99, imageUrl: 'https://placehold.co/150x100/e8f5e9/4CAF50?text=Salad', rating: 4.5 },
-                    { id: 'p2', name: 'Deluxe Burger', category: 'fastfood', price: 12.50, imageUrl: 'https://placehold.co/150x100/ffebee/FF6B6B?text=Burger', rating: 4.8 },
-                    { id: 'p3', name: 'Iced Coffee', category: 'drinks', price: 4.00, imageUrl: 'https://placehold.co/150x100/e3f2fd/2196F3?text=Coffee', rating: 4.2 },
-                    { id: 'p4', name: 'Chocolate Cake', category: 'desserts', price: 6.99, imageUrl: 'https://placehold.co/150x100/f3e5f5/9C27B0?text=Cake', rating: 4.9 },
-                ];
-                renderProducts(mockProducts.filter(p => category === 'all' || p.category === category));
-            }
-        }
-
-        function renderProducts(products) {
-            const productGrid = document.getElementById('product-grid');
-            if (!products || products.length === 0) {
-                productGrid.innerHTML = '<p class="text-center text-gray-500 py-10">No products found for this query.</p>';
-                return;
-            }
-
-            productGrid.innerHTML = products.map(product => `
-                <div class="product-card bg-white rounded-xl overflow-hidden p-3 flex flex-col justify-between">
-                    <div>
-                        <img src="${product.imageUrl}" alt="${product.name}" class="w-full h-24 object-cover rounded-lg mb-2">
-                        <p class="text-xs font-semibold truncate">${product.name}</p>
-                        <div class="text-xs flex items-center text-yellow-500 mb-1">
-                             ${'★'.repeat(Math.round(product.rating))} 
-                             <span class="text-gray-500 ml-1">(${product.rating.toFixed(1)})</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center pt-2">
-                        <span class="text-base font-bold text-green-600">$${product.price.toFixed(2)}</span>
-                        <button onclick='window.addToCart(${JSON.stringify(product)})' class="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center hover:bg-green-700 transition">+</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        // --- View Routing ---
-
-        window.navigateTo = function(viewId, category = 'all') {
-            const allViews = document.querySelectorAll('.app-view');
-            allViews.forEach(view => view.classList.add('hidden'));
-
-            const targetView = document.getElementById(viewId);
-            if (targetView) {
-                targetView.classList.remove('hidden');
-                
-                // Update footer active state
-                document.querySelectorAll('.nav-button').forEach(btn => {
-                    btn.classList.remove('text-green-600', 'font-bold');
-                    btn.classList.add('text-gray-400');
-                    if (btn.dataset.view === viewId) {
-                        btn.classList.add('text-green-600', 'font-bold');
-                        btn.classList.remove('text-gray-400');
-                    }
-                });
-
-                // Specific view actions
-                if (viewId === 'food-view') {
-                    // Load products for the initial category
-                    fetchProducts(category); 
-                } else if (viewId === 'account-view') {
-                    renderOrders(); // Re-render orders when account is visited
-                }
-            }
-        }
-
-        // --- Initialization ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initAuth();
             
-            // Attach footer navigation listeners
-            document.querySelectorAll('.nav-button').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    navigateTo(e.currentTarget.dataset.view);
-                });
-            });
-
-            // Attach search listener
-            document.getElementById('search-input').addEventListener('input', (e) => {
-                const query = e.target.value;
-                // Only perform search if currently on a listing page
-                const currentView = document.querySelector('.app-view:not(.hidden)').id;
-                if (currentView === 'food-view') {
-                    fetchProducts(null, query);
-                }
-            });
-
-            // Attach category filter listeners
-            document.getElementById('category-list').addEventListener('click', (e) => {
-                if (e.target.classList.contains('category-item')) {
-                    e.preventDefault();
-                    document.querySelectorAll('.category-item').forEach(item => {
-                        item.classList.remove('bg-green-600', 'text-white');
-                        item.classList.add('bg-gray-100', 'hover:bg-gray-200');
-                    });
-                    e.target.classList.remove('bg-gray-100', 'hover:bg-gray-200');
-                    e.target.classList.add('bg-green-600', 'text-white');
-                    fetchProducts(e.target.dataset.category);
-                }
-            });
-            
-            // Simulate fetching featured stores on load
-            document.getElementById('featured-stores').innerHTML = `
-                <div class="flex-shrink-0 w-40 h-20 bg-white rounded-lg shadow-md flex items-center justify-center text-sm font-semibold border-2 border-green-500">Store A</div>
-                <div class="flex-shrink-0 w-40 h-20 bg-white rounded-lg shadow-md flex items-center justify-center text-sm font-semibold">Store B</div>
-                <div class="flex-shrink-0 w-40 h-20 bg-white rounded-lg shadow-md flex items-center justify-center text-sm font-semibold">Store C</div>
+            // Set up loading state visually (clear existing products and show placeholders/message)
+            productGrid.innerHTML = `
+                <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
+                <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
+                <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
+                <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
             `;
+            
+            // Highlight active category
+            document.querySelectorAll('.category-item').forEach(item => {
+                if (item.dataset.category === category) {
+                    item.classList.add('bg-green-600', 'text-white');
+                    item.classList.remove('bg-gray-100', 'hover:bg-gray-200');
+                } else {
+                    item.classList.remove('bg-green-600', 'text-white');
+                    item.classList.add('bg-gray-100', 'hover:bg-gray-200');
+                }
+            });
+
+            // Simulate a network delay
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            let products = MOCK_PRODUCTS;
+
+            // 1. Filter by Category
+            if (category !== 'all') {
+                products = products.filter(p => p.category === category);
+            }
+
+            // 2. Filter by Search Query (not implemented for mock data)
+
+            let productHTML = '';
+            if (products.length === 0) {
+                 productHTML = '<p class="text-center text-gray-500 col-span-full py-10">No products found for this category.</p>';
+            } else {
+                products.forEach(p => {
+                    productHTML += `
+                        <div class="product-card bg-white rounded-xl overflow-hidden shadow-md p-2 flex flex-col justify-between">
+                            <img src="${p.imageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/f0f0f0/888888?text=Product';" alt="${p.name}" class="w-full h-24 object-cover rounded-lg mb-2">
+                            <div class="flex-grow">
+                                <p class="text-xs font-medium truncate">${p.name}</p>
+                                <p class="text-sm font-bold text-green-600 mb-2">$${p.price.toFixed(2)}</p>
+                            </div>
+                            <button onclick="addToCart({id: '${p.id}', name: '${p.name}', price: ${p.price}, imageUrl: '${p.imageUrl}'})" class="w-full bg-red-500 text-white text-xs p-1 rounded-lg hover:bg-red-600 transition">
+                                Add to Cart
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+
+            productGrid.innerHTML = productHTML;
+        }
+
+        // Attach event listeners to category items
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                fetchProducts(item.dataset.category);
+            });
         });
+
+        // --- Initializer ---
+        window.addEventListener('load', initAuth);
+
     </script>
 </body>
 </html>
