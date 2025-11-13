@@ -1,33 +1,31 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-export default function Navbar(){
-  const navigate = useNavigate();
+export default function Navbar() {
   const token = localStorage.getItem("userToken");
-  const logout = () => {
-    localStorage.removeItem("userToken");
-    navigate("/login");
-  };
   return (
-    <header className="container header">
-      <div>
-        <Link to="/"><strong>Lucky Marketplace</strong></Link>
-      </div>
-      <nav className="nav-links">
-        <Link to="/services">Services</Link>
-        <Link to="/products">Products</Link>
-        <Link to="/cart">Cart</Link>
+    <nav className="bg-green-600 text-white p-4 flex justify-between">
+      <h1 className="text-xl font-bold">Lucky Marketplace</h1>
+      <div className="space-x-4">
+        <Link to="/">Home</Link>
         {token ? (
           <>
-            <Link to="/orders">My Orders</Link>
-            <a onClick={logout} style={{cursor:"pointer", marginLeft:12}}>Logout</a>
+            <Link to="/cart">Cart</Link>
+            <button
+              onClick={() => {
+                localStorage.removeItem("userToken");
+                window.location.href = "/";
+              }}
+            >
+              Logout
+            </button>
           </>
         ) : (
           <>
             <Link to="/login">Login</Link>
-            <Link to="/register" style={{marginLeft:8}}>Register</Link>
+            <Link to="/signup">Signup</Link>
           </>
         )}
-      </nav>
-    </header>
+      </div>
+    </nav>
   );
 }
