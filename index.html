@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucky Marketplace Demo</title>
-    <link rel="stylesheet" href="style.css"> 
-    </head>
+    <title>6amMart Multi-Service</title>
+    <link rel="stylesheet" href="./src/index.css"> 
+</head>
 <body>
 
     <header class="app-header">
@@ -14,65 +14,80 @@
             <span class="location">98A eighth avenue, New York, US</span>
         </div>
         <div class="search-bar-container">
-            <input type="search" placeholder="Search item or store here..." class="search-input">
+            <input type="search" placeholder="Search local or restaurant here..." class="search-input">
         </div>
     </header>
 
-    <section class="category-section">
-        <h3>Categories</h3>
-        <div class="category-list-container">
-            <a href="#" class="category-item active">All</a>
-            <a href="#" class="category-item">Fish & Meat</a>
-            <a href="#" class="category-item">Breakfast</a>
-            <a href="#" class="category-item">Fruits</a>
-            <a href="#" class="category-item">Vegetables</a>
-            <a href="#" class="category-item">Pet Food</a>
-            <a href="#" class="category-item">Dairy</a>
-            <button class="view-all-button">View All</button>
-        </div>
-    </section>
+    <main id="home-view" class="app-view active">
+        
+        <section class="banner-section">
+            <img src="https://via.placeholder.com/400x150?text=World+Vegetarian+Day+Banner" alt="Banner" class="full-width-banner">
+        </section>
 
-    <section class="product-listing-section">
-        <h3>Popular Items Nearby</h3>
-        <div class="product-grid">
-            <div class="product-card">
-                <div class="product-image-container">
-                    <img src="https://via.placeholder.com/150/FFC300/000000?text=Mango" alt="Mango" class="product-image">
-                </div>
-                <div class="product-details">
-                    <div class="product-rating">
-                        <span class="star-icon">★</span> 
-                        <span class="rating-value">4.9</span>
-                    </div>
-                    <div class="product-name">Mango</div>
-                    <div class="product-price">
-                        <span class="current-price">$7.56</span>
-                        <span class="old-price">$9.99</span>
-                    </div>
-                </div>
-                <button class="add-to-cart-button">+</button>
+        <section class="service-grid-section">
+            <div class="service-grid">
+                <a href="#" class="service-item" data-target="food-view">
+                    <img src="https://via.placeholder.com/50/4CAF50/FFFFFF?text=G" alt="Grocery Icon">
+                    <span>Grocery</span>
+                </a>
+                <a href="#" class="service-item" data-target="food-view">
+                    <img src="https://via.placeholder.com/50/4CAF50/FFFFFF?text=P" alt="Pharmacy Icon">
+                    <span>Pharmacy</span>
+                </a>
+                <a href="#" class="service-item" data-target="food-view">
+                    <img src="https://via.placeholder.com/50/4CAF50/FFFFFF?text=S" alt="Shop Icon">
+                    <span>Shop</span>
+                </a>
+                <a href="#" class="service-item" data-target="food-view">
+                    <img src="https://via.placeholder.com/50/4CAF50/FFFFFF?text=E" alt="E-Commerce Icon">
+                    <span>E-Commerce</span>
+                </a>
+                <a href="#" class="service-item" data-target="food-view">
+                    <img src="https://via.placeholder.com/50/4CAF50/FFFFFF?text=R" alt="Parcel Icon">
+                    <span>Parcel</span>
+                </a>
             </div>
+        </section>
+        
+        <section class="delivery-location">
+            <h4>Deliver to</h4>
+            </section>
+        
+        <section class="featured-stores-section">
+            <h4>Featured Stores</h4>
+            </section>
+    </main>
 
-            <div class="product-card">
-                <div class="product-image-container">
-                    <img src="https://via.placeholder.com/150/B5B5B5/000000?text=Mayo" alt="Mayonnaise" class="product-image">
-                </div>
-                <div class="product-details">
-                    <div class="product-rating">
-                        <span class="star-icon">★</span> 
-                        <span class="rating-value">4.0</span>
-                    </div>
-                    <div class="product-name">Mayonnaise</div>
-                    <div class="product-price">
-                        <span class="current-price">$5.99</span>
-                        <span class="old-price">$7.00</span>
-                    </div>
-                </div>
-                <button class="add-to-cart-button">+</button>
+    <main id="food-view" class="app-view hidden">
+        <section class="category-section">
+            <h3>Categories</h3>
+            <div class="category-list-container">
+                <a href="#" class="category-item active">All</a>
+                <a href="#" class="category-item">Coffee</a>
+                <a href="#" class="category-item">Online</a>
+                <a href="#" class="category-item">Fast Food</a>
+                <a href="#" class="category-item">Cake</a>
+                <a href="#" class="category-item">Pizza</a>
             </div>
+        </section>
 
-            </div>
-    </section>
+        <section class="product-listing-section">
+            <h3>Popular Food Nearby</h3>
+            <div class="product-grid">
+                </div>
+        </section>
+        
+        <section class="campaign-section">
+            <h3>Food Campaign</h3>
+            </section>
+    </main>
 
+    <footer class="footer-nav">
+        <button class="nav-button active" data-target="home-view">Home</button>
+        <button class="nav-button" data-target="food-view">Cart</button>
+        <button class="nav-button" data-target="food-view">Account</button>
+    </footer>
+
+    <script src="./src/app.js"></script>
 </body>
 </html>
