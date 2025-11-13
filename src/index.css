@@ -1,9 +1,14 @@
-/* --- Base Styling (from your original index.css) --- */
+/* --- Global Base Styling --- */
 body { 
     font-family: Inter, system-ui, apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
     margin: 0; 
-    padding: 0;
-    background-color: #f4f4f4; /* Light gray background for the app */
+    padding-bottom: 60px; /* Space for the fixed footer */
+    background-color: #f4f4f4; 
+}
+
+/* Utility to hide/show views */
+.hidden {
+    display: none !important;
 }
 
 /* --- 1. Header Styling --- */
@@ -12,6 +17,9 @@ body {
     padding: 15px;
     border-bottom: 1px solid #ddd;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .header-top {
@@ -24,7 +32,7 @@ body {
 .logo {
     font-size: 20px;
     font-weight: bold;
-    color: #4CAF50; /* Green color for the brand */
+    color: #4CAF50;
 }
 
 .location {
@@ -41,40 +49,78 @@ body {
     box-sizing: border-box;
 }
 
-/* --- 2. Category Styling --- */
+/* --- HOME LANDING PAGE (Left Screen) --- */
+.full-width-banner {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.service-grid-section {
+    background-color: #fff;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.service-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    text-align: center;
+}
+
+.service-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 5px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #333;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.service-item img {
+    width: 45px;
+    height: 45px;
+    margin-bottom: 5px;
+    border-radius: 10px;
+}
+
+/* Other Home Sections */
+.delivery-location h4, .featured-stores-section h4 {
+    padding: 0 15px;
+    margin-bottom: 10px;
+}
+
+/* --- FOOD LISTING PAGE (Right Screen) --- */
 .category-section {
     padding: 15px 0 0 15px;
 }
 
 .category-list-container {
     display: flex;
-    overflow-x: scroll; /* Allows horizontal scrolling */
+    overflow-x: scroll; 
     padding: 10px 0;
-    -webkit-overflow-scrolling: touch; /* Improved scrolling on iOS */
-    gap: 10px; /* Space between items */
-    margin-right: 15px; /* Adjust for scrollbar space */
+    gap: 10px; 
+    margin-right: 15px;
 }
 
-/* Hide scrollbar for a cleaner look */
-.category-list-container::-webkit-scrollbar {
-    display: none;
-}
-.category-list-container {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-}
+.category-list-container::-webkit-scrollbar { display: none; }
 
 .category-item {
-    display: block;
-    min-width: 80px; /* Fixed width for category links */
+    flex-shrink: 0;
+    min-width: 80px; 
     text-align: center;
-    padding: 10px 5px;
+    padding: 8px 5px;
     background-color: #fff;
     border-radius: 8px;
     text-decoration: none;
     color: #333;
     font-size: 12px;
-    font-weight: 500;
 }
 
 .category-item.active {
@@ -82,32 +128,23 @@ body {
     font-weight: bold;
 }
 
-.view-all-button {
-    flex-shrink: 0; /* Prevents button from shrinking */
-    background: none;
-    border: none;
-    color: #4CAF50;
-    font-weight: bold;
-    margin-left: 10px;
-    cursor: pointer;
-}
-
-/* --- 3. Product Grid Styling --- */
 .product-listing-section {
     padding: 0 15px;
+}
+.product-listing-section h3 {
+    margin-top: 15px;
 }
 
 .product-grid {
     display: grid;
-    /* Responsive grid: Min width of 150px per card, fills available space */
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 15px;
     padding-top: 10px;
 }
 
-/* Individual Card Styling (Copied from previous response) */
+/* --- Product Card Styling (Reused for Food) --- */
 .product-card {
-    width: 100%; /* Take up full grid cell width */
+    width: 100%; 
     background-color: #fff;
     border-radius: 8px;
     padding: 10px;
@@ -183,4 +220,31 @@ body {
     line-height: 1;
     text-align: center;
     padding: 0;
+}
+
+/* --- 4. Footer Navigation --- */
+.footer-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 20;
+}
+
+.nav-button {
+    background: none;
+    border: none;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.nav-button.active {
+    color: #4CAF50;
+    font-weight: bold;
 }
