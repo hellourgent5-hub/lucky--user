@@ -1,776 +1,874 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>6amMart User App (Complete)</title>
-    <!-- Tailwind CSS is loaded for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Custom Styles for Mobile-First Design */
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #f7f7f7;
-            padding-bottom: 64px; /* Space for fixed footer */
-        }
-        .app-header {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            position: sticky;
-            top: 0;
-            z-index: 20;
-        }
-        .app-view {
-            min-height: calc(100vh - 120px); /* Ensures view takes up space */
-        }
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 12px;
-            padding: 16px;
-        }
-        .product-card {
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s;
-        }
-        .category-list-container {
-            display: flex;
-            overflow-x: scroll;
-            -webkit-overflow-scrolling: touch;
-            gap: 10px;
-            padding: 0 16px;
-        }
-        .category-list-container::-webkit-scrollbar { display: none; }
-        
-        .service-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-        }
-        .service-item img {
-            transition: transform 0.2s;
-        }
-        .service-item:hover img {
-            transform: scale(1.05);
-        }
-        .hidden {
-            display: none !important;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6amMart User App</title>
+<!-- Load Tailwind CSS for utility styling -->
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+/* Custom Styles for Mobile-First Design */
+body {
+font-family: 'Inter', sans-serif;
+background-color: #f7f7f7;
+padding-bottom: 64px; /* Space for fixed footer */
+}
+.app-header {
+box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+position: sticky;
+top: 0;
+z-index: 20;
+}
+.app-view {
+min-height: calc(100vh - 120px); /* Ensures view takes up space */
+}
+.product-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+gap: 12px;
+padding: 16px;
+}
+.product-card {
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+transition: transform 0.2s;
+}
+.category-list-container {
+display: flex;
+overflow-x: scroll;
+-webkit-overflow-scrolling: touch;
+gap: 10px;
+padding: 0 16px;
+}
+.category-list-container::-webkit-scrollbar { display: none; }
+
+.service-grid {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 16px;
+}
+.service-item img {
+transition: transform 0.2s;
+}
+.service-item:hover img {
+transform: scale(1.05);
+}
+.hidden {
+display: none !important;
+}
+/* Custom style for the fixed error/message bar */
+.error-message {
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+padding: 12px;
+text-align: center;
+font-weight: bold;
+z-index: 50;
+color: white;
+transition: transform 0.3s ease-out;
+transform: translateY(-100%);
+border-radius: 0 0 10px 10px;
+}
+.error-message.visible {
+transform: translateY(0);
+}
+</style>
 </head>
 <body class="text-gray-800">
 
-    <!-- Global Loading Overlay -->
-    <div id="loading-overlay" class="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-        <p class="ml-4 text-green-700 font-semibold">Loading...</p>
-    </div>
-
-    <!-- Global Message/Modal Box -->
-    <div id="message-box" class="fixed top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
-        Item added to cart!
-    </div>
-
-    <!-- Main Content Containers -->
-    <div id="app-container" class="relative">
-        <!-- 1. AUTH VIEWS (Login/Signup) -->
-        <div id="auth-view" class="app-view p-6 flex flex-col items-center justify-center h-screen bg-gray-50">
-            <h2 class="text-3xl font-bold text-green-600 mb-6">Welcome to 6amMart</h2>
-            
-            <div id="login-form" class="w-full max-w-sm bg-white p-6 rounded-xl shadow-lg transition-all duration-300">
-                <h3 class="text-xl font-semibold mb-4 text-center">Login</h3>
-                <input type="email" id="login-email" placeholder="Email" class="w-full p-3 mb-4 border border-gray-300 rounded-lg">
-                <input type="password" id="login-password" placeholder="Password" class="w-full p-3 mb-6 border border-gray-300 rounded-lg">
-                <button onclick="handleLogin()" class="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition">Log In</button>
-                <button onclick="showSignup()" class="w-full mt-4 text-green-600 text-sm hover:text-green-700">Need an account? Sign Up</button>
-            </div>
-            
-            <div id="signup-form" class="w-full max-w-sm bg-white p-6 rounded-xl shadow-lg hidden transition-all duration-300">
-                <h3 class="text-xl font-semibold mb-4 text-center">Sign Up</h3>
-                <input type="email" id="signup-email" placeholder="Email" class="w-full p-3 mb-4 border border-gray-300 rounded-lg">
-                <input type="password" id="signup-password" placeholder="Password" class="w-full p-3 mb-6 border border-gray-300 rounded-lg">
-                <button onclick="handleSignup()" class="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition">Create Account</button>
-                <button onclick="showLogin()" class="w-full mt-4 text-green-600 text-sm hover:text-green-700">Already have an account? Log In</button>
-            </div>
-        </div>
-
-        <!-- 2. HOME LANDING PAGE (Multi-Service Selector) -->
-        <div id="home-view" class="app-view hidden">
-            <section class="p-4">
-                <img src="https://placehold.co/600x150/4CAF50/ffffff?text=World+Vegetarian+Day+Banner" alt="Banner" class="w-full rounded-xl shadow-md mb-6">
-                
-                <h3 class="text-lg font-semibold mb-3">All Services</h3>
-                <div class="service-grid">
-                    <!-- Service Items -->
-                    <div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-md cursor-pointer hover:bg-gray-50" onclick="navigateTo('food-view')">
-                        <img src="https://placehold.co/50x50/e8f5e9/4CAF50?text=G" class="rounded-lg mb-2" alt="Grocery">
-                        <span class="text-xs font-medium">Grocery</span>
-                    </div>
-                    <div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-md cursor-pointer hover:bg-gray-50" onclick="navigateTo('food-view')">
-                        <img src="https://placehold.co/50x50/e8f5e9/4CAF50?text=P" class="rounded-lg mb-2" alt="Pharmacy">
-                        <span class="text-xs font-medium">Pharmacy</span>
-                    </div>
-                    <div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-md cursor-pointer hover:bg-gray-50" onclick="navigateTo('food-view')">
-                        <img src="https://placehold.co/50x50/e8f5e9/4CAF50?text=F" class="rounded-lg mb-2" alt="Food">
-                        <span class="text-xs font-medium">Food</span>
-                    </div>
-                    <div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-md cursor-pointer hover:bg-gray-50" onclick="navigateTo('food-view')">
-                        <img src="https://placehold.co/50x50/e8f5e9/4CAF50?text=E" class="rounded-lg mb-2" alt="E-Commerce">
-                        <span class="text-xs font-medium">E-Commerce</span>
-                    </div>
-                    <div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-md cursor-pointer hover:bg-gray-50" onclick="navigateTo('food-view')">
-                        <img src="https://placehold.co/50x50/e8f5e9/4CAF50?text=L" class="rounded-lg mb-2" alt="Logistics">
-                        <span class="text-xs font-medium">Logistics</span>
-                    </div>
-                </div>
-            </section>
-            
-            <section class="p-4 pt-0">
-                <h3 class="text-lg font-semibold mb-3">Featured Stores</h3>
-                <div id="featured-stores" class="flex overflow-x-scroll pb-2 space-x-3">
-                    <!-- Stores will be dynamically loaded here -->
-                    <div class="flex-shrink-0 w-40 h-20 bg-gray-200 rounded-lg animate-pulse"></div>
-                    <div class="flex-shrink-0 w-40 h-20 bg-gray-200 rounded-lg animate-pulse"></div>
-                </div>
-            </section>
-        </div>
-
-        <!-- 3. FOOD LISTING VIEW (The Marketplace) -->
-        <div id="food-view" class="app-view hidden">
-            <!-- Categories -->
-            <section class="py-3 bg-white shadow-sm">
-                <h3 class="text-lg font-semibold mb-2 px-4">Categories</h3>
-                <div id="category-list" class="category-list-container">
-                    <a href="#" class="category-item flex-shrink-0 text-xs font-medium p-2 rounded-lg bg-green-600 text-white" data-category="all">All</a>
-                    <a href="#" class="category-item flex-shrink-0 text-xs font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200" data-category="fastfood">Fast Food</a>
-                    <a href="#" class="category-item flex-shrink-0 text-xs font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200" data-category="drinks">Drinks</a>
-                    <a href="#" class="category-item flex-shrink-0 text-xs font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200" data-category="desserts">Desserts</a>
-                </div>
-            </section>
-
-            <!-- Product Grid -->
-            <section class="pt-4">
-                <h3 class="text-lg font-semibold px-4 mb-2">Popular Items Nearby</h3>
-                <div id="product-grid" class="product-grid">
-                    <!-- Products will be dynamically loaded here -->
-                    <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
-                    <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
-                    <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
-                    <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
-                </div>
-            </section>
-        </div>
-        
-        <!-- 4. CART VIEW -->
-        <div id="cart-view" class="app-view hidden p-4">
-            <h2 class="text-2xl font-bold mb-6 text-green-700">Your Cart</h2>
-            <div id="cart-items" class="space-y-4">
-                <!-- Cart items dynamically loaded -->
-            </div>
-            
-            <div id="cart-summary" class="bg-white p-4 rounded-xl shadow-lg mt-6">
-                <h3 class="text-xl font-semibold mb-3">Order Summary</h3>
-                <div class="flex justify-between mb-2">
-                    <span class="text-gray-600">Subtotal:</span>
-                    <span id="cart-subtotal" class="font-medium">$0.00</span>
-                </div>
-                <div class="flex justify-between mb-4">
-                    <span class="text-gray-600">Delivery Fee:</span>
-                    <span class="font-medium">$5.00</span>
-                </div>
-                <div class="flex justify-between border-t pt-3">
-                    <span class="text-xl font-bold">Total:</span>
-                    <span id="cart-total" class="text-xl font-bold text-green-600">$5.00</span>
-                </div>
-            </div>
-            
-            <button onclick="handleCheckout()" id="checkout-button" class="w-full bg-green-600 text-white p-3 rounded-xl font-semibold mt-6 disabled:bg-green-300">Proceed to Checkout</button>
-            <button onclick="clearCart()" id="clear-cart-button" class="w-full bg-red-100 text-red-600 p-3 rounded-xl font-semibold mt-3 disabled:opacity-50 hover:bg-red-200 transition">Clear Cart</button>
-
-            <!-- Checkout Modal -->
-            <div id="checkout-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center hidden">
-                <div class="bg-white p-6 rounded-xl shadow-2xl w-11/12 max-w-sm">
-                    <h3 class="text-2xl font-bold mb-4 text-green-600">Place Order</h3>
-                    <p class="mb-4">Total amount: <span id="modal-total" class="font-bold text-lg text-red-500"></span></p>
-                    
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-1">Payment Method</label>
-                        <select id="payment-method" class="w-full p-2 border rounded-lg">
-                            <option value="cod">Cash on Delivery (COD)</option>
-                            <option value="card" disabled>Credit/Debit Card (Unavailable)</option>
-                        </select>
-                    </div>
-
-                    <button onclick="placeOrder()" class="w-full bg-red-500 text-white p-3 rounded-lg font-semibold hover:bg-red-600 transition">Confirm Order & Pay</button>
-                    <button onclick="hideCheckoutModal()" class="w-full mt-3 text-gray-500 hover:text-gray-700 text-sm">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 5. ACCOUNT/ORDERS VIEW -->
-        <div id="account-view" class="app-view hidden p-4">
-            <h2 class="text-2xl font-bold mb-6 text-green-700">My Account</h2>
-
-            <div class="bg-white p-4 rounded-xl shadow-lg mb-6">
-                <p class="font-semibold mb-2">User: <span id="account-user-id" class="font-normal text-sm text-gray-500"></span></p>
-                <button onclick="handleLogout()" class="bg-red-500 text-white p-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition">Log Out</button>
-            </div>
-            
-            <h3 class="text-xl font-bold mb-4">My Orders</h3>
-            <div id="orders-list" class="space-y-3">
-                <!-- Orders dynamically loaded -->
-                <p class="text-gray-500">No orders found.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Global Footer Navigation -->
-    <footer id="main-footer" class="fixed bottom-0 left-0 w-full bg-white flex justify-around p-3 shadow-2xl z-30 hidden">
-        <button class="nav-button flex flex-col items-center text-green-600" data-view="home-view">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-10v10a1 1 0 001 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            <span class="text-xs">Home</span>
-        </button>
-        <button class="nav-button flex flex-col items-center text-gray-400" data-view="food-view">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-            <span class="text-xs">Shop</span>
-        </button>
-        <button class="nav-button flex flex-col items-center text-gray-400 relative" data-view="cart-view">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            <span id="cart-count" class="absolute top-0 right-3 bg-red-500 text-white text-xs font-bold px-1 rounded-full leading-4 hidden">0</span>
-            <span class="text-xs">Cart</span>
-        </button>
-        <button class="nav-button flex flex-col items-center text-gray-400" data-view="account-view">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            <span class="text-xs">Account</span>
-        </button>
-    </footer>
-
-    <!-- Firebase SDK Imports (MUST be 'type="module"') -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // setLogLevel('Debug'); // Uncomment for debugging Firebase logs
-        
-        // --- Global Variables (Provided by Canvas Environment) ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let firebaseConfig = null;
-        try {
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                firebaseConfig = JSON.parse(__firebase_config);
-            }
-        } catch (e) {
-            console.error("Error parsing __firebase_config:", e);
-        }
-        
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        // --- App State ---
-        window.app = null;
-        window.db = null;
-        window.auth = null;
-        window.userId = null;
-        window.cart = []; // Local mirror of cart state
-        window.orders = []; // Local mirror of orders state
-        window.isFirebaseReady = false; // Flag to track successful initialization
-
-        const DELIVERY_FEE = 5.00;
-        const API_BASE_URL = 'https://lucky-backend-xh9.onrender.com'; 
-
-        // Mock Product Data
-        const MOCK_PRODUCTS = [
-            { id: 'p1', name: 'Premium Burger Combo', price: 12.50, category: 'fastfood', imageUrl: 'https://placehold.co/150x150/10B981/ffffff?text=Burger' },
-            { id: 'p2', name: 'Fresh Salad Bowl', price: 8.75, category: 'healthy', imageUrl: 'https://placehold.co/150x150/059669/ffffff?text=Salad' },
-            { id: 'p3', name: 'Iced Coffee', price: 4.00, category: 'drinks', imageUrl: 'https://placehold.co/150x150/F59E0B/ffffff?text=Coffee' },
-            { id: 'p4', name: 'Chocolate Sundae', price: 6.25, category: 'desserts', imageUrl: 'https://placehold.co/150x150/DC2626/ffffff?text=Sundae' },
-            { id: 'p5', name: 'Spicy Tacos (3 Pcs)', price: 9.50, category: 'fastfood', imageUrl: 'https://placehold.co/150x150/84CC16/ffffff?text=Tacos' },
-            { id: 'p6', name: 'Lemonade', price: 3.50, category: 'drinks', imageUrl: 'https://placehold.co/150x150/3B82F6/ffffff?text=Lemonade' },
-        ];
-
-
-        // --- Utility Functions ---
-
-        function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
-        function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
-        
-        function showMessage(msg) {
-            const box = document.getElementById('message-box');
-            box.textContent = msg;
-            box.classList.remove('opacity-0', 'pointer-events-none');
-            box.classList.add('opacity-100');
-            setTimeout(() => {
-                box.classList.add('opacity-0', 'pointer-events-none');
-            }, 3000);
-        }
-
-        // --- Routing and Navigation ---
-
-        const views = ['auth-view', 'home-view', 'food-view', 'cart-view', 'account-view'];
-
-        window.navigateTo = function(targetViewId) {
-            views.forEach(viewId => {
-                const view = document.getElementById(viewId);
-                if (view) {
-                    if (viewId === targetViewId) {
-                        view.classList.remove('hidden');
-                    } else {
-                        view.classList.add('hidden');
-                    }
-                }
-            });
-            // Update footer active state
-            document.querySelectorAll('.nav-button').forEach(button => {
-                button.classList.remove('text-green-600');
-                button.classList.add('text-gray-400');
-                if (button.dataset.view === targetViewId) {
-                    button.classList.remove('text-gray-400');
-                    button.classList.add('text-green-600');
-                }
-            });
-            
-            // Special handlers for view changes
-            if (targetViewId === 'food-view') {
-                fetchProducts();
-            }
-            // Ensure footer is shown only after successful auth
-            const mainFooter = document.getElementById('main-footer');
-            if (window.userId) {
-                 mainFooter.classList.remove('hidden');
-            } else {
-                 mainFooter.classList.add('hidden');
-            }
-        }
-        
-        // Add navigation listeners for the footer
-        document.querySelectorAll('.nav-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                navigateTo(button.dataset.view);
-            });
-        });
-
-
-        // --- Firestore References ---
-
-        function getCartRef() {
-            // Private data storage path: /artifacts/{appId}/users/{userId}/cart/current
-            return doc(window.db, "artifacts", appId, "users", window.userId, "cart", "current");
-        }
-        
-        function getOrdersCollectionRef() {
-            // Private data collection path: /artifacts/{appId}/users/{userId}/orders
-            return collection(window.db, "artifacts", appId, "users", window.userId, "orders");
-        }
-
-        // --- Authentication Logic ---
-
-        async function initAuth() {
-            if (!firebaseConfig) {
-                console.error("Firebase configuration not available. Cannot initialize Firebase.");
-                showMessage("App Error: Firebase configuration missing.");
-                hideLoading();
-                return;
-            }
-
-            try {
-                window.app = initializeApp(firebaseConfig);
-                window.db = getFirestore(window.app);
-                window.auth = getAuth(window.app);
-                
-                // IMPORTANT: Set flag ONLY after successful initialization
-                window.isFirebaseReady = true; 
-
-                // Listen for auth state changes
-                onAuthStateChanged(window.auth, (user) => {
-                    if (user) {
-                        window.userId = user.uid;
-                        document.getElementById('account-user-id').textContent = user.uid.substring(0, 12) + '...';
-                        navigateTo('home-view');
-                        initFirestoreListeners();
-                    } else {
-                        window.userId = null;
-                        navigateTo('auth-view');
-                    }
-                    hideLoading();
-                });
-
-                // Initial sign-in attempt
-                showLoading();
-                if (initialAuthToken) {
-                    await signInWithCustomToken(window.auth, initialAuthToken);
-                } else {
-                    // Sign in anonymously if no custom token is provided
-                    await signInAnonymously(window.auth);
-                }
-            } catch (error) {
-                console.error("Firebase initialization or initial sign-in failed:", error);
-                showMessage(`Initialization Error: ${error.message}`);
-                hideLoading();
-            }
-        }
-        
-        window.handleLogin = async function() {
-            if (!window.isFirebaseReady || !window.auth) {
-                return showMessage("System not ready. Please wait or refresh.");
-            }
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            if (!email || !password) return showMessage("Please enter email and password.");
-            showLoading();
-            try {
-                await signInWithEmailAndPassword(window.auth, email, password);
-                showMessage("Logged in successfully!");
-            } catch (error) {
-                showMessage(`Login Failed: ${error.message}`);
-            }
-            hideLoading();
-        }
-
-        window.handleSignup = async function() {
-            if (!window.isFirebaseReady || !window.auth) {
-                return showMessage("System not ready. Please wait or refresh.");
-            }
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            if (!email || !password || password.length < 6) return showMessage("Password must be 6 characters.");
-            showLoading();
-            try {
-                await createUserWithEmailAndPassword(window.auth, email, password);
-                showMessage("Account created and logged in!");
-            } catch (error) {
-                showMessage(`Signup Failed: ${error.message}`);
-            }
-            hideLoading();
-        }
-
-        window.handleLogout = async function() {
-            if (!window.isFirebaseReady || !window.auth) return;
-            showLoading();
-            try {
-                await signOut(window.auth);
-                window.cart = [];
-                window.orders = [];
-                showMessage("Logged out.");
-            } catch (error) {
-                showMessage(`Logout Failed: ${error.message}`);
-            }
-            hideLoading();
-        }
-
-        window.showSignup = function() {
-            document.getElementById('login-form').classList.add('hidden');
-            document.getElementById('signup-form').classList.remove('hidden');
-        }
-
-        window.showLogin = function() {
-            document.getElementById('signup-form').classList.add('hidden');
-            document.getElementById('login-form').classList.remove('hidden');
-        }
-
-        // --- Firestore Listeners ---
-
-        function initFirestoreListeners() {
-            if (!window.userId || !window.db) return;
-            
-            // 1. Cart Listener
-            onSnapshot(getCartRef(), (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                    // Safety check for array type (though Firebase usually handles this)
-                    const data = docSnapshot.data();
-                    window.cart = Array.isArray(data.items) ? data.items : []; 
-                } else {
-                    window.cart = [];
-                }
-                updateCartUI();
-            }, (error) => console.error("Error listening to cart:", error));
-
-            // 2. Orders Listener
-            const ordersQuery = query(getOrdersCollectionRef());
-            onSnapshot(ordersQuery, (snapshot) => {
-                window.orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderOrders();
-            }, (error) => console.error("Error listening to orders:", error));
-        }
-
-        // --- Cart CRUD Operations ---
-
-        async function updateCartInFirestore(newCart) {
-            if (!window.userId || !window.db) return showMessage("Authentication required.");
-            try {
-                // Use setDoc for the single document where cart data resides
-                await setDoc(getCartRef(), { 
-                    items: newCart, 
-                    userId: window.userId, 
-                    updatedAt: serverTimestamp() 
-                }, { merge: true });
-            } catch (error) {
-                console.error("Failed to update cart:", error);
-                showMessage("Error updating cart.");
-            }
-        }
-
-        window.addToCart = function(product) {
-            if (!window.isFirebaseReady || !window.userId) return showMessage("Please log in to add items.");
-            
-            const existingItem = window.cart.find(item => item.id === product.id);
-            let newCart;
-            
-            if (existingItem) {
-                newCart = window.cart.map(item => 
-                    item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-                );
-            } else {
-                newCart = [...window.cart, { ...product, quantity: 1 }];
-            }
-            
-            updateCartInFirestore(newCart);
-            showMessage(`${product.name} added to cart!`);
-        }
-
-        window.updateCartItemQuantity = function(productId, delta) {
-            if (!window.isFirebaseReady || !window.userId) return;
-            
-            let newCart = window.cart.map(item => {
-                if (item.id === productId) {
-                    const newQuantity = item.quantity + delta;
-                    if (newQuantity <= 0) return null; // Mark for removal
-                    return { ...item, quantity: newQuantity };
-                }
-                return item;
-            }).filter(item => item !== null); // Remove null marked items
-            
-            updateCartInFirestore(newCart);
-        }
-
-        window.clearCart = function() {
-            if (!window.isFirebaseReady || !window.userId) return showMessage("Please log in first.");
-            if (window.cart.length === 0) return showMessage("Cart is already empty.");
-            
-            // Clear the cart by setting the items array to empty
-            updateCartInFirestore([]);
-            showMessage("Cart cleared successfully!");
-        }
-
-        // --- UI Rendering ---
-
-        function updateCartUI() {
-            const cartItemsContainer = document.getElementById('cart-items');
-            const cartCountElement = document.getElementById('cart-count');
-            const subtotalElement = document.getElementById('cart-subtotal');
-            const totalElement = document.getElementById('cart-total');
-            const checkoutButton = document.getElementById('checkout-button');
-            const clearCartButton = document.getElementById('clear-cart-button');
-
-            const cartTotalQuantity = window.cart.reduce((sum, item) => sum + item.quantity, 0);
-
-            if (window.cart.length === 0) {
-                cartItemsContainer.innerHTML = '<p class="text-center text-gray-500 py-10">Your cart is empty.</p>';
-                cartCountElement.classList.add('hidden');
-                checkoutButton.disabled = true;
-                clearCartButton.disabled = true;
-                subtotalElement.textContent = '$0.00';
-                totalElement.textContent = `$${DELIVERY_FEE.toFixed(2)}`;
-                document.getElementById('modal-total').textContent = `$${DELIVERY_FEE.toFixed(2)}`;
-                return;
-            }
-
-            checkoutButton.disabled = false;
-            clearCartButton.disabled = false;
-            cartCountElement.classList.remove('hidden');
-            cartCountElement.textContent = cartTotalQuantity;
-
-            let subtotal = 0;
-            let cartHTML = '';
-
-            window.cart.forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                subtotal += itemTotal;
-
-                cartHTML += `
-                    <div class="flex items-center bg-white p-3 rounded-xl shadow-sm">
-                        <img src="${item.imageUrl}" alt="${item.name}" class="w-12 h-12 object-cover rounded-md mr-4">
-                        <div class="flex-grow">
-                            <p class="font-semibold text-sm truncate">${item.name}</p>
-                            <p class="text-green-600 font-bold text-sm">$${item.price.toFixed(2)}</p>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <button onclick="updateCartItemQuantity('${item.id}', -1)" class="w-6 h-6 bg-gray-200 rounded-full text-gray-700">-</button>
-                            <span class="font-semibold">${item.quantity}</span>
-                            <button onclick="updateCartItemQuantity('${item.id}', 1)" class="w-6 h-6 bg-green-600 rounded-full text-white">+</button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            const total = subtotal + DELIVERY_FEE;
-            cartItemsContainer.innerHTML = cartHTML;
-            subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
-            totalElement.textContent = `$${total.toFixed(2)}`;
-            document.getElementById('modal-total').textContent = `$${total.toFixed(2)}`;
-        }
-        
-        function renderOrders() {
-            const ordersList = document.getElementById('orders-list');
-            
-            if (window.orders.length === 0) {
-                ordersList.innerHTML = '<p class="text-gray-500">No orders found.</p>';
-                return;
-            }
-            
-            let ordersHTML = '';
-            // Sort in memory by createdAt descending
-            window.orders.sort((a, b) => {
-                const dateA = a.createdAt ? new Date(a.createdAt.toDate()).getTime() : 0;
-                const dateB = b.createdAt ? new Date(b.createdAt.toDate()).getTime() : 0;
-                return dateB - dateA;
-            });
-            
-            window.orders.forEach(order => {
-                const date = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleDateString() : 'N/A';
-                const total = order.total.toFixed(2);
-                const statusColor = order.status === 'Pending' ? 'yellow' : 'green';
-
-                ordersHTML += `
-                    <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-${statusColor}-500">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="font-semibold text-sm">Order ID: ${order.id.substring(0, 8)}</span>
-                            <span class="text-xs text-gray-500">${date}</span>
-                        </div>
-                        <p class="font-bold text-xl text-green-600 mb-2">$${total}</p>
-                        <p class="text-sm">Status: <span class="font-bold text-${statusColor}-500">${order.status}</span></p>
-                        <details class="mt-2">
-                            <summary class="text-sm font-medium text-gray-500 cursor-pointer">Details (${order.items.length} items)</summary>
-                            <ul class="mt-2 text-xs space-y-1">
-                                ${order.items.map(item => `<li>${item.name} x ${item.quantity} ($${(item.price * item.quantity).toFixed(2)})</li>`).join('')}
-                            </ul>
-                        </details>
-                    </div>
-                `;
-            });
-            
-            ordersList.innerHTML = ordersHTML;
-        }
-
-        // --- Checkout and Order Logic ---
-
-        window.handleCheckout = function() {
-            if (window.cart.length === 0) return showMessage("Your cart is empty!");
-            document.getElementById('checkout-modal').classList.remove('hidden');
-        }
-
-        window.hideCheckoutModal = function() {
-            document.getElementById('checkout-modal').classList.add('hidden');
-        }
-
-        window.placeOrder = async function() {
-            if (!window.userId || window.cart.length === 0 || !window.isFirebaseReady) return showMessage("Authentication or cart error.");
-            hideCheckoutModal();
-            showLoading();
-
-            const subtotal = window.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-            const total = subtotal + DELIVERY_FEE;
-            
-            const orderData = {
-                userId: window.userId,
-                items: window.cart,
-                subtotal: subtotal,
-                deliveryFee: DELIVERY_FEE,
-                total: total,
-                status: 'Pending', // Initial status
-                paymentMethod: document.getElementById('payment-method').value,
-                createdAt: serverTimestamp(),
-            };
-
-            try {
-                // 1. Add order to Firestore (Auto-generate ID)
-                // Using doc(collectionRef) generates a new ID automatically
-                const newOrderRef = doc(getOrdersCollectionRef());
-                await setDoc(newOrderRef, orderData);
-
-                // 2. Clear the cart
-                await updateCartInFirestore([]);
-                
-                showMessage(`Order Placed! Total: $${total.toFixed(2)}`);
-                navigateTo('account-view');
-            } catch (error) {
-                console.error("Failed to place order:", error);
-                showMessage(`Order placement failed: ${error.message}`);
-            }
-            hideLoading();
-        }
-
-
-        // --- Backend Product Fetching (Simulated/Mocked) ---
-        
-        async function fetchProducts(category = 'all', query = '') {
-            const productGrid = document.getElementById('product-grid');
-            
-            // Set up loading state visually (clear existing products and show placeholders/message)
-            productGrid.innerHTML = `
-                <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
-                <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
-                <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
-                <div class="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
-            `;
-            
-            // Highlight active category
-            document.querySelectorAll('.category-item').forEach(item => {
-                if (item.dataset.category === category) {
-                    item.classList.add('bg-green-600', 'text-white');
-                    item.classList.remove('bg-gray-100', 'hover:bg-gray-200');
-                } else {
-                    item.classList.remove('bg-green-600', 'text-white');
-                    item.classList.add('bg-gray-100', 'hover:bg-gray-200');
-                }
-            });
-
-            // Simulate a network delay
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            let products = MOCK_PRODUCTS;
-
-            // 1. Filter by Category
-            if (category !== 'all') {
-                products = products.filter(p => p.category === category);
-            }
-
-            // 2. Filter by Search Query (not implemented for mock data)
-
-            let productHTML = '';
-            if (products.length === 0) {
-                 productHTML = '<p class="text-center text-gray-500 col-span-full py-10">No products found for this category.</p>';
-            } else {
-                products.forEach(p => {
-                    productHTML += `
-                        <div class="product-card bg-white rounded-xl overflow-hidden shadow-md p-2 flex flex-col justify-between">
-                            <img src="${p.imageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/f0f0f0/888888?text=Product';" alt="${p.name}" class="w-full h-24 object-cover rounded-lg mb-2">
-                            <div class="flex-grow">
-                                <p class="text-xs font-medium truncate">${p.name}</p>
-                                <p class="text-sm font-bold text-green-600 mb-2">$${p.price.toFixed(2)}</p>
-                            </div>
-                            <button onclick="addToCart({id: '${p.id}', name: '${p.name}', price: ${p.price}, imageUrl: '${p.imageUrl}'})" class="w-full bg-red-500 text-white text-xs p-1 rounded-lg hover:bg-red-600 transition">
-                                Add to Cart
-                            </button>
-                        </div>
-                    `;
-                });
-            }
-
-            productGrid.innerHTML = productHTML;
-        }
-
-        // Attach event listeners to category items
-        document.querySelectorAll('.category-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                fetchProducts(item.dataset.category);
-            });
-        });
-
-        // --- Initializer ---
-        window.addEventListener('load', initAuth);
-
-    </script>
+<!-- Global Error/Message Bar (Top Fixed) -->
+<div id="error-bar" class="error-message bg-red-500">
+<!-- Error message content will be inserted here -->
+</div>
+
+<!-- Global Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+<p class="ml-4 text-green-700 font-semibold">Loading...</p>
+</div>
+
+<!-- Global Message Box (Standard Notification) -->
+<div id="message-box" class="fixed top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
+Item added to cart!
+</div>
+
+<!-- Main App Container -->
+<div id="app-container" class="relative">
+
+<!-- Header (Visible across most screens except Auth) -->
+<header id="app-header" class="app-header bg-white p-4 shadow hidden">
+<div class="max-w-xl mx-auto flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+<div class="flex items-center space-x-2 w-full sm:w-auto">
+<!-- Logo and Location -->
+<h1 class="text-xl font-bold text-green-600">6amMart</h1>
+<div class="text-xs text-gray-500 flex items-center">
+<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
+<path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+</svg>
+<span id="header-location">98A eighth avenue, New York, US</span>
+</div>
+</div>
+
+<!-- Search Bar (Mobile View) -->
+<input type="text" placeholder="Search local or restaurant here..." class="w-full sm:w-64 p-2 text-sm border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+</div>
+</header>
+
+<!-- 1. AUTH VIEWS (Login/Signup) -->
+<div id="auth-view" class="app-view p-6 flex flex-col items-center justify-center h-screen bg-gray-50">
+<h2 class="text-3xl font-bold text-green-600 mb-8">Welcome to 6amMart</h2>
+
+<div id="login-form" class="w-full max-w-sm bg-white p-6 rounded-xl shadow-2xl transition-all duration-300">
+<h3 class="text-2xl font-semibold mb-6 text-center text-green-700">Login</h3>
+<input type="email" id="login-email" placeholder="Email" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+<input type="password" id="login-password" placeholder="Password" class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+<button onclick="handleLogin()" class="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">Log In</button>
+<button onclick="showSignup()" class="w-full mt-4 text-green-600 text-sm hover:text-green-700 font-medium">Need an account? Sign Up</button>
+</div>
+
+<div id="signup-form" class="w-full max-w-sm bg-white p-6 rounded-xl shadow-2xl hidden transition-all duration-300">
+<h3 class="text-2xl font-semibold mb-6 text-center text-green-700">Sign Up</h3>
+<input type="email" id="signup-email" placeholder="Email" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+<input type="password" id="signup-password" placeholder="Password" class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+<button onclick="handleSignup()" class="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">Create Account</button>
+<button onclick="showLogin()" class="w-full mt-4 text-green-600 text-sm hover:text-green-700 font-medium">Already have an account? Log In</button>
+</div>
+</div>
+
+<!-- 2. HOME LANDING PAGE (Multi-Service Selector) -->
+<div id="home-view" class="app-view max-w-xl mx-auto pt-4 hidden">
+<section class="p-4 pt-0">
+<!-- Banner Placeholder (Based on user-provided images) -->
+<img src="https://placehold.co/600x150/4CAF50/ffffff?text=6AMMART+PROMOTIONAL+BANNER" alt="Banner" class="w-full rounded-xl shadow-md mb-6">
+
+<h3 class="text-xl font-bold mb-4 text-green-700">Our Services</h3>
+<div class="service-grid">
+<!-- Service Items - all navigate to the 'food-view' (Marketplace) for simplicity -->
+<div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-lg cursor-pointer hover:bg-green-50 transition" onclick="navigateTo('food-view')">
+<img src="https://placehold.co/50x50/e8f5e9/28A745?text=ðŸ›ï¸" class="rounded-lg mb-2" alt="Grocery Icon">
+<span class="text-sm font-medium">Grocery</span>
+</div>
+<div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-lg cursor-pointer hover:bg-green-50 transition" onclick="navigateTo('food-view')">
+<img src="https://placehold.co/50x50/e8f5e9/28A745?text=ðŸ’Š" class="rounded-lg mb-2" alt="Pharmacy Icon">
+<span class="text-sm font-medium">Pharmacy</span>
+</div>
+<div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-lg cursor-pointer hover:bg-green-50 transition" onclick="navigateTo('food-view')">
+<img src="https://placehold.co/50x50/e8f5e9/28A745?text=ðŸ”" class="rounded-lg mb-2" alt="Food Icon">
+<span class="text-sm font-medium">Food</span>
+</div>
+<div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-lg cursor-pointer hover:bg-green-50 transition" onclick="navigateTo('food-view')">
+<img src="https://placehold.co/50x50/e8f5e9/28A745?text=ðŸ“¦" class="rounded-lg mb-2" alt="E-Commerce Icon">
+<span class="text-sm font-medium">E-Commerce</span>
+</div>
+<div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-lg cursor-pointer hover:bg-green-50 transition" onclick="navigateTo('food-view')">
+<img src="https://placehold.co/50x50/e8f5e9/28A745?text=ðŸ›µ" class="rounded-lg mb-2" alt="Parcel Icon">
+<span class="text-sm font-medium">Parcel</span>
+</div>
+<div class="service-item flex flex-col items-center p-3 bg-white rounded-xl shadow-lg cursor-pointer hover:bg-green-50 transition" onclick="navigateTo('food-view')">
+<img src="https://placehold.co/50x50/e8f5e9/28A745?text=ðŸ› ï¸" class="rounded-lg mb-2" alt="Services Icon">
+<span class="text-sm font-medium">Services</span>
+</div>
+</div>
+</section>
+
+<section class="p-4">
+<h3 class="text-xl font-bold mb-4 text-green-700">Featured Stores</h3>
+<div id="featured-stores" class="flex overflow-x-scroll pb-2 space-x-4">
+<!-- Placeholder Store Cards -->
+<div class="flex-shrink-0 w-48 bg-white rounded-xl shadow-md p-3 border border-gray-200">
+<img src="https://placehold.co/100x50/F8FFD2/28A745?text=Store+A" class="w-full h-12 object-cover rounded-lg mb-2">
+<h4 class="font-semibold text-sm">Mega Food Mart</h4>
+<p class="text-xs text-gray-500">1.2 km away â€¢ 4.5 â­</p>
+</div>
+<div class="flex-shrink-0 w-48 bg-white rounded-xl shadow-md p-3 border border-gray-200">
+<img src="https://placehold.co/100x50/F8FFD2/28A745?text=Store+B" class="w-full h-12 object-cover rounded-lg mb-2">
+<h4 class="font-semibold text-sm">Health Pharmacy</h4>
+<p class="text-xs text-gray-500">0.5 km away â€¢ 4.8 â­</p>
+</div>
+<div class="flex-shrink-0 w-48 bg-white rounded-xl shadow-md p-3 border border-gray-200">
+<img src="https://placehold.co/100x50/F8FFD2/28A745?text=Store+C" class="w-full h-12 object-cover rounded-lg mb-2">
+<h4 class="font-semibold text-sm">Gourmet Treats</h4>
+<p class="text-xs text-gray-500">2.1 km away â€¢ 4.2 â­</p>
+</div>
+</div>
+</section>
+</div>
+
+<!-- 3. FOOD LISTING VIEW (The Marketplace) -->
+<div id="food-view" class="app-view max-w-xl mx-auto hidden">
+<!-- Categories -->
+<section class="py-3 bg-white shadow-sm sticky top-0 z-10">
+<h3 class="text-lg font-bold mb-2 px-4">Categories</h3>
+<div id="category-list" class="category-list-container">
+<button class="category-item flex-shrink-0 text-sm font-medium px-4 py-2 rounded-full bg-green-600 text-white" data-category="all" onclick="filterProducts('all')">All</button>
+<button class="category-item flex-shrink-0 text-sm font-medium px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200" data-category="fastfood" onclick="filterProducts('fastfood')">Fast Food</button>
+<button class="category-item flex-shrink-0 text-sm font-medium px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200" data-category="drinks" onclick="filterProducts('drinks')">Drinks</button>
+<button class="category-item flex-shrink-0 text-sm font-medium px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200" data-category="desserts" onclick="filterProducts('desserts')">Desserts</button>
+<button class="category-item flex-shrink-0 text-sm font-medium px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200" data-category="healthy" onclick="filterProducts('healthy')">Healthy</button>
+</div>
+</section>
+
+<!-- Product Grid -->
+<section class="pt-4">
+<h3 class="text-xl font-bold px-4 mb-3 text-green-700">Popular Items</h3>
+<div id="product-grid" class="product-grid">
+<!-- Products will be dynamically loaded here -->
+</div>
+</section>
+</div>
+
+<!-- 4. CART VIEW -->
+<div id="cart-view" class="app-view max-w-xl mx-auto hidden p-4">
+<h2 class="text-3xl font-bold mb-6 text-green-700">Your Cart</h2>
+
+<div id="cart-items" class="space-y-4">
+<!-- Cart items list -->
+</div>
+
+<div id="empty-cart-message" class="text-center text-gray-500 py-10 text-lg hidden">
+Your cart is empty. Start shopping now!
+</div>
+
+<div id="cart-summary-container" class="bg-white p-6 rounded-xl shadow-2xl border border-gray-100 mt-6 transition-all duration-300 hidden">
+<h3 class="text-xl font-semibold mb-4 border-b pb-2">Order Summary</h3>
+<div class="flex justify-between mb-2">
+<span class="text-gray-600">Subtotal:</span>
+<span id="cart-subtotal" class="font-semibold text-gray-800">$0.00</span>
+</div>
+<div class="flex justify-between mb-2">
+<span class="text-gray-600">Delivery Fee:</span>
+<span id="cart-delivery-fee" class="font-semibold text-gray-800">$5.00</span>
+</div>
+<div class="flex justify-between pt-3 border-t border-gray-300 mt-3">
+<span class="text-xl font-bold text-green-700">Total:</span>
+<span id="cart-total" class="text-xl font-bold text-green-700">$0.00</span>
+</div>
+<button onclick="handleCheckout()" class="w-full mt-6 bg-green-600 text-white p-3 rounded-lg font-bold text-lg hover:bg-green-700 transition shadow-md">
+Proceed to Checkout
+</button>
+</div>
+</div>
+
+<!-- 5. ACCOUNT/ORDERS VIEW -->
+<div id="account-view" class="app-view max-w-xl mx-auto hidden p-4">
+<h2 class="text-3xl font-bold mb-6 text-green-700">My Account</h2>
+
+<div class="bg-white p-6 rounded-xl shadow-lg mb-6">
+<h3 class="text-xl font-semibold mb-3">User Information</h3>
+<p class="text-gray-600">User ID: <span id="user-id-display" class="font-mono text-sm break-all">Awaiting authentication...</span></p>
+<p class="text-gray-600">Email: <span id="user-email-display" class="font-medium">N/A</span></p>
+</div>
+
+<h3 class="text-xl font-bold mb-4 text-green-700">My Orders</h3>
+<div id="orders-list" class="space-y-4">
+<p class="text-center text-gray-500 py-4" id="no-orders-message">No orders placed yet.</p>
+<!-- Orders will be dynamically loaded here -->
+</div>
+
+<button onclick="handleLogout()" class="w-full mt-8 bg-red-500 text-white p-3 rounded-lg font-bold hover:bg-red-600 transition shadow-md">
+Log Out
+</button>
+</div>
+</div>
+
+<!-- Fixed Footer Navigation -->
+<footer id="app-footer" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl hidden">
+<div class="max-w-xl mx-auto flex justify-around items-center h-16">
+<button class="nav-button flex flex-col items-center p-2 text-green-600" data-view="home-view" onclick="navigateTo('home-view')">
+<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+<span class="text-xs">Home</span>
+</button>
+<button class="nav-button relative flex flex-col items-center p-2 text-gray-400 hover:text-green-600" data-view="cart-view" onclick="navigateTo('cart-view')">
+<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43H14a1 1 0 00.894-.553l3.189-7.98a1 1 0 00-.756-1.468L5.358 2.01zM17 14a2 2 0 11-4 0 2 2 0 014 0zM7 14a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+<span class="text-xs">Cart</span>
+<span id="cart-badge" class="absolute top-1 right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full hidden">0</span>
+</button>
+<button class="nav-button flex flex-col items-center p-2 text-gray-400 hover:text-green-600" data-view="account-view" onclick="navigateTo('account-view')">
+<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+<span class="text-xs">Account</span>
+</button>
+</div>
+</footer>
+
+<!-- Firebase Imports -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import {
+getAuth,
+signInAnonymously,
+signInWithCustomToken,
+onAuthStateChanged,
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+signOut
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import {
+getFirestore,
+doc,
+setDoc,
+onSnapshot,
+collection,
+query,
+addDoc,
+serverTimestamp,
+deleteDoc,
+setLogLevel
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Set Firebase log level to debug for better console feedback
+setLogLevel('Debug');
+
+let app, auth, db;
+let userId = null;
+let isAuthReady = false;
+
+// --- Global State ---
+window.cart = {}; // { productId: { item: {id, name, price}, quantity } }
+const deliveryFee = 5.00;
+
+// Mock Product Data (To be replaced by Admin-managed Firestore data later)
+const productsData = [
+{ id: 'prod1', name: 'Fried Noodles', price: 7.55, image: 'https://placehold.co/150x150/f9f9e2/333?text=Noodles', category: 'fastfood', rating: 4.5 },
+{ id: 'prod2', name: 'Strawberry Smoothie', price: 5.99, image: 'https://placehold.co/150x150/ffedf0/333?text=Smoothie', category: 'drinks', rating: 4.8 },
+{ id: 'prod3', name: 'Veggie Burger', price: 8.50, image: 'https://placehold.co/150x150/dff0d8/333?text=Burger', category: 'fastfood', rating: 4.2 },
+{ id: 'prod4', name: 'Fresh Salad Bowl', price: 10.20, image: 'https://placehold.co/150x150/e0f7fa/333?text=Salad', category: 'healthy', rating: 4.9 },
+{ id: 'prod5', name: 'Chocolate Cake Slice', price: 6.50, image: 'https://placehold.co/150x150/fbe9e7/333?text=Cake', category: 'desserts', rating: 4.7 },
+];
+
+
+// --- UI Utility Functions ---
+
+/** Shows a temporary message in a floating box */
+window.showMessage = (message, isError = false) => {
+const box = document.getElementById('message-box');
+box.textContent = message;
+box.className = 'fixed top-4 left-1/2 -translate-x-1/2 px-4 py-2 text-white rounded-lg shadow-lg z-50 transition-opacity duration-300 opacity-0 pointer-events-none';
+box.classList.add(isError ? 'bg-red-500' : 'bg-green-500');
+box.classList.add('opacity-100');
+box.classList.remove('pointer-events-none');
+setTimeout(() => {
+box.classList.remove('opacity-100');
+box.classList.add('pointer-events-none');
+}, 3000);
+};
+
+/** Shows the fixed top error bar for critical system errors */
+window.showCriticalError = (message) => {
+const bar = document.getElementById('error-bar');
+bar.textContent = 'CRITICAL ERROR: ' + message;
+bar.classList.add('visible');
+console.error('CRITICAL ERROR:', message);
+};
+
+/** Manages showing/hiding different main app views */
+window.navigateTo = (viewId) => {
+document.querySelectorAll('.app-view').forEach(view => {
+view.classList.add('hidden');
+});
+document.getElementById(viewId).classList.remove('hidden');
+
+// Update footer button state
+document.querySelectorAll('.nav-button').forEach(btn => {
+btn.classList.remove('text-green-600');
+btn.classList.add('text-gray-400');
+if (btn.dataset.view === viewId) {
+btn.classList.add('text-green-600');
+btn.classList.remove('text-gray-400');
+}
+});
+
+// Special logic for data refresh
+if (viewId === 'food-view') {
+renderProducts();
+} else if (viewId === 'cart-view') {
+renderCart();
+} else if (viewId === 'account-view') {
+// Orders are handled by the onSnapshot listener
+if (auth.currentUser) {
+document.getElementById('user-email-display').textContent = auth.currentUser.email || 'N/A';
+}
+}
+};
+
+/** Toggles between Login and Signup forms */
+window.showSignup = () => {
+document.getElementById('login-form').classList.add('hidden');
+document.getElementById('signup-form').classList.remove('hidden');
+};
+
+window.showLogin = () => {
+document.getElementById('signup-form').classList.add('hidden');
+document.getElementById('login-form').classList.remove('hidden');
+};
+
+// --- Firebase Core Initialization ---
+
+/** Initializes Firebase and attempts authentication */
+async function initializeFirebase() {
+try {
+// Check if global variables are available
+if (typeof __firebase_config === 'undefined' || typeof __app_id === 'undefined') {
+showCriticalError("Firebase configuration globals missing. Features disabled.");
+document.getElementById('loading-overlay').classList.add('hidden');
+// Force display Auth view with error, but allow UI to load
+document.getElementById('auth-view').classList.remove('hidden');
+return;
+}
+
+const firebaseConfig = JSON.parse(__firebase_config);
+const appId = __app_id;
+
+app = initializeApp(firebaseConfig);
+auth = getAuth(app);
+db = getFirestore(app);
+
+// Authentication listener (runs on load and state change)
+onAuthStateChanged(auth, async (user) => {
+isAuthReady = true;
+document.getElementById('loading-overlay').classList.add('hidden');
+
+if (user) {
+userId = user.uid;
+document.getElementById('user-id-display').textContent = userId;
+
+// Hide Auth, show Home and Footer
+document.getElementById('auth-view').classList.add('hidden');
+document.getElementById('app-header').classList.remove('hidden');
+document.getElementById('app-footer').classList.remove('hidden');
+navigateTo('home-view');
+
+// Set up Real-time listeners for the authenticated user
+setupFirestoreListeners();
+
+} else {
+userId = null;
+// Show Auth view if not logged in
+document.getElementById('auth-view').classList.remove('hidden');
+document.getElementById('app-header').classList.add('hidden');
+document.getElementById('app-footer').classList.add('hidden');
+}
+});
+
+// Initial sign-in attempt
+document.getElementById('loading-overlay').classList.remove('hidden');
+if (typeof __initial_auth_token !== 'undefined') {
+await signInWithCustomToken(auth, __initial_auth_token);
+} else {
+await signInAnonymously(auth);
+}
+
+} catch (error) {
+console.error("Firebase Initialization Failed:", error);
+showCriticalError(`Initialization failed: ${error.message}`);
+document.getElementById('loading-overlay').classList.add('hidden');
+}
+}
+
+/** Sets up real-time data listeners for the user's cart and orders */
+function setupFirestoreListeners() {
+if (!db || !userId) return;
+
+const appId = __app_id;
+
+// 1. Cart Listener (Private Data)
+const cartPath = `artifacts/${appId}/users/${userId}/cart/current`;
+onSnapshot(doc(db, cartPath), (docSnapshot) => {
+if (docSnapshot.exists()) {
+// Update the global window.cart object
+window.cart = docSnapshot.data().items || {};
+} else {
+window.cart = {};
+}
+updateCartBadge();
+// Rerender cart view if it is currently active
+if (!document.getElementById('cart-view').classList.contains('hidden')) {
+renderCart();
+}
+}, (error) => {
+console.error("Cart Listener Error:", error);
+showMessage('Error fetching cart data.', true);
+});
+
+// 2. Orders Listener (Private Data)
+const ordersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/orders`);
+const ordersQuery = query(ordersCollectionRef);
+
+onSnapshot(ordersQuery, (snapshot) => {
+const orders = [];
+snapshot.forEach(doc => {
+// Spread operator is safe here as order data is simple JSON
+const data = doc.data();
+// Ensure createdAt is handled for new orders without a timestamp yet
+orders.push({ id: doc.id, ...data, createdAt: data.createdAt ? data.createdAt : { toDate: () => new Date() } });
+});
+renderOrders(orders);
+}, (error) => {
+console.error("Orders Listener Error:", error);
+showMessage('Error fetching orders.', true);
+});
+}
+
+
+// --- Authentication Logic ---
+
+window.handleSignup = async () => {
+const email = document.getElementById('signup-email').value;
+const password = document.getElementById('signup-password').value;
+if (!email || password.length < 6) {
+showMessage('Please enter a valid email and a password of at least 6 characters.', true);
+return;
+}
+document.getElementById('loading-overlay').classList.remove('hidden');
+try {
+await createUserWithEmailAndPassword(auth, email, password);
+showMessage('Account created successfully! Welcome to 6amMart.');
+} catch (error) {
+console.error("Signup Failed:", error);
+showMessage(`Signup Failed: ${error.message}`, true);
+} finally {
+document.getElementById('loading-overlay').classList.add('hidden');
+}
+};
+
+window.handleLogin = async () => {
+const email = document.getElementById('login-email').value;
+const password = document.getElementById('login-password').value;
+if (!email || !password) {
+showMessage('Please enter both email and password.', true);
+return;
+}
+document.getElementById('loading-overlay').classList.remove('hidden');
+try {
+await signInWithEmailAndPassword(auth, email, password);
+showMessage('Login successful! Welcome back.');
+} catch (error) {
+console.error("Login Failed:", error);
+showMessage(`Login Failed: ${error.message}`, true);
+} finally {
+document.getElementById('loading-overlay').classList.add('hidden');
+}
+};
+
+window.handleLogout = async () => {
+document.getElementById('loading-overlay').classList.remove('hidden');
+try {
+await signOut(auth);
+window.cart = {}; // Clear client side cart state
+updateCartBadge();
+showMessage('You have been logged out.');
+} catch (error) {
+console.error("Logout Failed:", error);
+showMessage(`Logout Failed: ${error.message}`, true);
+} finally {
+document.getElementById('loading-overlay').classList.add('hidden');
+}
+};
+
+// --- Marketplace Logic ---
+
+window.filterProducts = (category) => {
+document.querySelectorAll('.category-item').forEach(btn => {
+btn.classList.remove('bg-green-600', 'text-white');
+btn.classList.add('bg-gray-100', 'hover:bg-gray-200');
+if (btn.dataset.category === category) {
+btn.classList.add('bg-green-600', 'text-white');
+btn.classList.remove('bg-gray-100', 'hover:bg-gray-200');
+}
+});
+renderProducts(category);
+};
+
+function renderProducts(filterCategory = 'all') {
+const grid = document.getElementById('product-grid');
+grid.innerHTML = '';
+
+const filteredProducts = productsData.filter(p => filterCategory === 'all' || p.category === filterCategory);
+
+filteredProducts.forEach(product => {
+// Determine current quantity in cart for this product
+const currentCartItem = window.cart[product.id];
+const quantity = currentCartItem ? currentCartItem.quantity : 0;
+
+// Button text changes based on whether item is in cart
+const buttonText = quantity > 0 ? `+ ${quantity} in Cart` : '+ Add';
+const buttonClass = quantity > 0 ? 'bg-green-700 hover:bg-green-800' : 'bg-green-500 hover:bg-green-600';
+
+const productCard = document.createElement('div');
+productCard.className = 'product-card bg-white rounded-xl overflow-hidden p-3 flex flex-col items-center';
+
+productCard.innerHTML = `
+<img src="${product.image}" alt="${product.name}" class="w-28 h-28 object-cover rounded-lg mb-2">
+<h4 class="font-semibold text-sm text-center">${product.name}</h4>
+<p class="text-xs text-gray-500 mb-2">${product.rating} â­</p>
+<p class="text-lg font-bold text-green-600 mb-3">$${product.price.toFixed(2)}</p>
+<button data-id="${product.id}" onclick="addToCart(this)" class="w-full ${buttonClass} text-white text-xs font-bold py-2 rounded-lg transition">
+${buttonText}
+</button>
+`;
+grid.appendChild(productCard);
+});
+}
+
+// --- Cart Logic ---
+
+window.addToCart = async (button) => {
+if (!userId) {
+showMessage('Please log in to add items to the cart.', true);
+return;
+}
+
+const productId = button.dataset.id;
+const product = productsData.find(p => p.id === productId);
+
+if (!product) {
+showMessage('Product not found.', true);
+return;
+}
+
+// Update local cart state
+const currentQuantity = (window.cart[productId] ? window.cart[productId].quantity : 0);
+
+// NOTE: When storing in Firestore, we only need basic, non-circular data.
+window.cart[productId] = {
+item: {
+id: product.id,
+name: product.name,
+price: product.price,
+image: product.image // Add image for cart rendering
+},
+quantity: currentQuantity + 1
+};
+
+await updateFirestoreCart();
+showMessage(`Added ${product.name} to cart.`);
+renderProducts(document.querySelector('.category-item.bg-green-600').dataset.category); // Refresh product list to update button state
+};
+
+window.updateQuantity = async (productId, delta) => {
+if (!userId) return;
+
+let currentQuantity = (window.cart[productId] ? window.cart[productId].quantity : 0) + delta;
+
+if (currentQuantity <= 0) {
+delete window.cart[productId];
+} else {
+// Ensure we have the base product data from the cart entry, not the mock data array
+const cartItem = window.cart[productId];
+if (!cartItem) return;
+window.cart[productId].quantity = currentQuantity;
+}
+
+await updateFirestoreCart();
+
+// Re-render relevant views
+if (!document.getElementById('cart-view').classList.contains('hidden')) {
+renderCart();
+}
+if (!document.getElementById('food-view').classList.contains('hidden')) {
+renderProducts(document.querySelector('.category-item.bg-green-600').dataset.category);
+}
+};
+
+/** Writes the entire cart state to Firestore */
+async function updateFirestoreCart() {
+if (!db || !userId) return;
+const appId = __app_id;
+const cartDocRef = doc(db, `artifacts/${appId}/users/${userId}/cart/current`);
+
+try {
+// Prepare cart data for Firestore. It only needs the necessary details (id, name, price, quantity)
+const itemsToSave = {};
+for (const [id, cartItem] of Object.entries(window.cart)) {
+itemsToSave[id] = {
+id: cartItem.item.id,
+name: cartItem.item.name,
+price: cartItem.item.price,
+quantity: cartItem.quantity
+};
+}
+
+await setDoc(cartDocRef, { items: itemsToSave, updatedAt: serverTimestamp() });
+} catch (error) {
+console.error("Error updating cart in Firestore:", error);
+showMessage('Could not save cart changes.', true);
+}
+}
+
+function updateCartBadge() {
+const badge = document.getElementById('cart-badge');
+const itemCount = Object.values(window.cart).reduce((total, item) => total + item.quantity, 0);
+
+badge.textContent = itemCount;
+if (itemCount > 0) {
+badge.classList.remove('hidden');
+} else {
+badge.classList.add('hidden');
+}
+}
+
+function renderCart() {
+const itemsContainer = document.getElementById('cart-items');
+const emptyMessage = document.getElementById('empty-cart-message');
+const summaryContainer = document.getElementById('cart-summary-container');
+itemsContainer.innerHTML = '';
+
+const cartItemsArray = Object.values(window.cart);
+let subtotal = 0;
+
+if (cartItemsArray.length === 0) {
+emptyMessage.classList.remove('hidden');
+summaryContainer.classList.add('hidden');
+return;
+}
+
+emptyMessage.classList.add('hidden');
+summaryContainer.classList.remove('hidden');
+
+cartItemsArray.forEach(cartItem => {
+const { item, quantity } = cartItem;
+// Since cartItem.item in window.cart now has the full details needed for rendering:
+const lineTotal = item.price * quantity;
+subtotal += lineTotal;
+
+const itemHtml = `
+<div class="flex items-center bg-white p-4 rounded-xl shadow-md border border-gray-100">
+<img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded-lg mr-4">
+<div class="flex-grow">
+<h4 class="font-semibold text-sm">${item.name}</h4>
+<p class="text-xs text-gray-500">$${item.price.toFixed(2)} / item</p>
+</div>
+<div class="flex items-center space-x-2">
+<button onclick="updateQuantity('${item.id}', -1)" class="bg-gray-200 text-gray-700 w-6 h-6 rounded-full flex items-center justify-center font-bold hover:bg-gray-300 transition">-</button>
+<span class="font-bold">${quantity}</span>
+<button onclick="updateQuantity('${item.id}', 1)" class="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold hover:bg-green-600 transition">+</button>
+</div>
+<div class="ml-4 text-right">
+<p class="font-bold text-green-700">$${lineTotal.toFixed(2)}</p>
+</div>
+</div>
+`;
+itemsContainer.insertAdjacentHTML('beforeend', itemHtml);
+});
+
+// Update summary
+const total = subtotal + deliveryFee;
+document.getElementById('cart-subtotal').textContent = `$${subtotal.toFixed(2)}`;
+document.getElementById('cart-total').textContent = `$${total.toFixed(2)}`;
+document.getElementById('cart-delivery-fee').textContent = `$${deliveryFee.toFixed(2)}`;
+}
+
+// --- Checkout and Order Logic ---
+
+window.handleCheckout = async () => {
+if (!userId) {
+showMessage('You must be logged in to place an order.', true);
+return;
+}
+if (Object.keys(window.cart).length === 0) {
+showMessage('Your cart is empty!', true);
+return;
+}
+
+document.getElementById('loading-overlay').classList.remove('hidden');
+
+try {
+// Calculate totals
+const subtotal = Object.values(window.cart).reduce((sum, item) => sum + (item.item.price * item.quantity), 0);
+const total = subtotal + deliveryFee;
+
+// Prepare items list, ensuring only necessary data is stored
+const orderItems = Object.values(window.cart).map(item => ({
+id: item.item.id,
+name: item.item.name,
+price: item.item.price,
+quantity: item.quantity
+}));
+
+// Create Order object (Private Data)
+const orderData = {
+userId: userId,
+email: auth.currentUser.email || 'anonymous',
+items: orderItems,
+subtotal: subtotal,
+deliveryFee: deliveryFee,
+total: total,
+status: 'Pending',
+createdAt: serverTimestamp()
+};
+
+const appId = __app_id;
+const ordersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/orders`);
+await addDoc(ordersCollectionRef, orderData);
+
+// Clear cart in Firestore (Private Data)
+const cartDocRef = doc(db, `artifacts/${appId}/users/${userId}/cart/current`);
+// Deleting the document is the cleanest way to reset the cart for the user
+await deleteDoc(cartDocRef);
+
+window.cart = {}; // Clear client side state
+updateCartBadge();
+
+showMessage('Order placed successfully! Check your account for status.', false);
+navigateTo('account-view');
+
+} catch (error) {
+console.error("Checkout Failed:", error);
+showMessage(`Checkout failed: ${error.message}`, true);
+} finally {
+document.getElementById('loading-overlay').classList.add('hidden');
+}
+};
+
+function renderOrders(orders) {
+const list = document.getElementById('orders-list');
+list.innerHTML = '';
+
+if (orders.length === 0) {
+document.getElementById('no-orders-message').classList.remove('hidden');
+return;
+}
+
+document.getElementById('no-orders-message').classList.add('hidden');
+
+// Sort by creation time, newest first. Use a fallback date for orders still processing server timestamp.
+orders.sort((a, b) => {
+const dateA = a.createdAt ? a.createdAt.toDate().getTime() : 0;
+const dateB = b.createdAt ? b.createdAt.toDate().getTime() : 0;
+return dateB - dateA;
+});
+
+orders.forEach(order => {
+const dateString = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleDateString() : 'Processing...';
+const statusColor = order.status === 'Pending' ? 'text-yellow-600' : 'text-green-600';
+
+const orderItemsList = order.items.map(item =>
+`<li class="text-xs text-gray-500">${item.quantity}x ${item.name} ($${(item.price * item.quantity).toFixed(2)})</li>`
+).join('');
+
+const orderHtml = `
+<div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
+<div class="flex justify-between items-center mb-2 border-b pb-2">
+<h4 class="font-bold text-md">Order #${order.id.substring(0, 8)}</h4>
+<span class="text-sm ${statusColor} font-semibold">${order.status}</span>
+</div>
+<p class="text-sm text-gray-600 mb-1">Date: ${dateString}</p>
+<ul class="list-disc pl-5 my-2">
+${orderItemsList}
+</ul>
+<p class="text-lg font-bold text-green-700 text-right mt-2">Total: $${order.total.toFixed(2)}</p>
+</div>
+`;
+list.insertAdjacentHTML('beforeend', orderHtml);
+});
+}
+
+// --- Startup ---
+window.onload = () => {
+initializeFirebase();
+filterProducts('all'); // Render products initially while auth loads
+};
+
+</script>
 </body>
 </html>
